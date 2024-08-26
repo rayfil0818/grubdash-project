@@ -1,9 +1,6 @@
 const path = require("path");
-
-
 // Use the existing dishes data
 const dishes = require(path.resolve("src/data/dishes-data"));
-
 // Use this function to assign ID's when necessary
 const nextId = require("../utils/nextId");
 
@@ -32,21 +29,21 @@ function bodyDataHas(propertyName) {
 function idInBodyMatchRouteId(req, res, next) {
     const { dishId } = req.params;
     const { data: { id } = {} } = req.body;
-    if (dishId === id) {
+    if (!id || dishId === id) {
       return next();
     }
     next({
-        status: 404,
+        status: 400,
         message: `Dish id does not match route id. Dish: ${id}, Route: ${dishId}`,
       });
 }
 
 function dishExists (req, res, next) {
     const { dishId } = req.params;
-    const foundDish = dishes.find((dish) => dish.id === Number(dishId));
+    const foundDish = dishes.find((dish) => dish.id === dishId);
     if (foundDish) {
       res.locals.dish = foundDish;
-      return next();
+        next();
     }
     next({
       status: 404,
@@ -63,7 +60,7 @@ function create (req, res, next) {
       price,
       image_url,
     };
-    urls.push(newDish);
+    dishes.push(newDish);
     res.status(201).json({ data: newDish });
 }
 
@@ -73,14 +70,12 @@ function read (req, res, next) {
 
 function update (req, res, next) {
     const dish = res.locals.dish;
-    const { data: { href } = {} } = req.body;
-  
-    // Update the url
-    url.href = href;
-  
-    console.log(url);
-  
-    res.json({ data: url });
+    const { data: { name, description, price, image_url } = {} } = req.body;
+    dish.name = name;
+    dish.description = description;
+    dish.price = price;
+    dish.image_url = image_url;
+    res.json({ data: dish });
 }
 
 function list (req, res, next) {
@@ -102,8 +97,8 @@ module.exports = {
         create,
     ],
     update: [
-        idInBodyMatchRouteId,
         dishExists,
+        idInBodyMatchRouteId,
         bodyDataHas("name"),
         bodyDataHas("description"),
         bodyDataHas("price"),
